@@ -5,14 +5,14 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { FirebaseAdmin } from '../../config/firebase.setup';
+import { FirebaseAdmin } from 'src/configs/firebase.setup';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
     private readonly admin: FirebaseAdmin,
-  ) {}
+  ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const app = this.admin.setup();
