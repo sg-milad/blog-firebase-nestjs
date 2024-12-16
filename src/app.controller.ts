@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
-import { Auth } from './decorators/auth.decorator';
 import { ApiOperation } from '@nestjs/swagger';
+import { Auth } from './common/decorators/auth.decorator';
 
 @Controller()
 export class AppController {
