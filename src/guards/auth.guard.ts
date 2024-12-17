@@ -26,7 +26,7 @@ export class AuthGuard implements CanActivate {
 
       const permissions = this.reflector.get<string[]>('permissions', context.getHandler());
       if (permissions && !permissions.includes(claims.role)) {
-        throw new UnauthorizedException('Invalid permissions');
+        throw new UnauthorizedException('Invalid token');
       }
 
       return true;
