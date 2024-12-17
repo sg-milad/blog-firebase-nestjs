@@ -1,22 +1,33 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PostEntity } from './entity/post.entity';
 import { CreatePostDto } from './dto/create.post.dto';
-import { UpdatePostDto } from './dto/update.post.dto';
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class PostsService {
     constructor(
         @InjectRepository(PostEntity)
         private postRepository: Repository<PostEntity>,
+        private userService: UserService,
     ) { }
 
-    async create(createPostDto: CreatePostDto, authorId: string): Promise<PostEntity> {
+    async create(
+        createPostDto: CreatePostDto & { imageUrl?: string },
+        authorId: string
+    ): Promise<PostEntity> {
+        const user = await this.userService.findOneUser(authorId);
+
+        if (!user) {
+            throw new NotFoundException("User not found");
+        }
+
         const post = this.postRepository.create({
-            author: { fcbId: authorId },
+            author: user,
             ...createPostDto
         });
+
         return await this.postRepository.save(post);
     }
 
@@ -24,9 +35,8 @@ export class PostsService {
         const [posts, total] = await this.postRepository.findAndCount({
             take: limit,
             skip: (page - 1) * limit,
-            relations: ['author'],
             order: { createdAt: 'DESC' },
-            where: { author: { fcbId: userId } }
+            where: { author: { uId: userId } }
         });
 
         return {
@@ -37,8 +47,7 @@ export class PostsService {
 
     async findOne(id: string, userId: string): Promise<PostEntity> {
         const post = await this.postRepository.findOne({
-            where: { id, author: { fcbId: userId } },
-            relations: ['author']
+            where: { id, author: { uId: userId } },
         });
 
         if (!post) {
@@ -48,12 +57,8 @@ export class PostsService {
         return post;
     }
 
-    async update(id: string, updatePostDto: UpdatePostDto, userId: string): Promise<PostEntity> {
+    async update(id: string, updatePostDto: CreatePostDto, userId: string): Promise<PostEntity> {
         const post = await this.findOne(id, userId);
-
-        if (post.author.id !== userId && !post) {
-            throw new UnauthorizedException('You are not authorized to update this post');
-        }
 
         return this.postRepository.save({
             ...post,
@@ -64,11 +69,7 @@ export class PostsService {
     async remove(id: string, userId: string) {
         const post = await this.findOne(id, userId);
 
-        if (post.author.id !== userId) {
-            throw new UnauthorizedException('You are not authorized to delete this post');
-        }
-
         await this.postRepository.remove(post);
-        return { msg: "data deleted successfully" }
+        return post
     }
 }
