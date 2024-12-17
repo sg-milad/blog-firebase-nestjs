@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { PostEntity } from './entity/post.entity';
 import { CreatePostDto } from './dto/create.post.dto';
 import { UserService } from 'src/user/user.service';
+import { FileUploadService } from 'src/common/file.upload.service';
 
 @Injectable()
 export class PostsService {
@@ -11,6 +12,7 @@ export class PostsService {
         @InjectRepository(PostEntity)
         private postRepository: Repository<PostEntity>,
         private userService: UserService,
+        private readonly fileUploadService: FileUploadService
     ) { }
 
     async create(
@@ -69,7 +71,15 @@ export class PostsService {
     async remove(id: string, userId: string) {
         const post = await this.findOne(id, userId);
 
+        if (post.imageUrl) {
+            try {
+                await this.fileUploadService.deleteFile(post.imageUrl);
+            } catch (error) {
+                console.warn(`Failed to delete image for post ${id}:`, error);
+            }
+        }
+
         await this.postRepository.remove(post);
-        return post
+        return post;
     }
 }
