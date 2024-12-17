@@ -6,8 +6,8 @@ export class UserEntity {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ name: "fcb_id" })
-    fcbId: string
+    @Column({ name: "u_id" })
+    uId: string
 
     @CreateDateColumn()
     createdAt: Date;
