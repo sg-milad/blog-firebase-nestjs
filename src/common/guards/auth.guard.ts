@@ -1,37 +1,37 @@
-import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { FirebaseAdmin } from 'src/configs/firebase.setup';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
-    private reflector: Reflector,
+    private readonly reflector: Reflector,
     private readonly admin: FirebaseAdmin,
   ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const app = this.admin.setup();
-    const idToken = context.getArgs()[0]?.headers?.authorization.split(' ')[1];
+    const request = context.switchToHttp().getRequest();
+    const authorization = request.headers?.authorization;
 
-    const permissions = this.reflector.get<string[]>(
-      'permissions',
-      context.getHandler(),
-    );
+    if (!authorization || !authorization.startsWith('Bearer ')) {
+      throw new UnauthorizedException('Missing or invalid Authorization header');
+    }
+
+    const idToken = authorization.split(' ')[1];
+
     try {
       const claims = await app.auth().verifyIdToken(idToken);
+      request.user = claims;
 
-      if (claims.role === permissions[0]) {
-        return true;
+      const permissions = this.reflector.get<string[]>('permissions', context.getHandler());
+      if (permissions && !permissions.includes(claims.role)) {
+        throw new UnauthorizedException('Invalid token');
       }
-      throw new UnauthorizedException();
+
+      return true;
     } catch (error) {
-      console.log('Error', error);
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('Invalid token');
     }
   }
 }
