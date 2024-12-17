@@ -7,7 +7,7 @@ export class UserEntity {
     id: string;
 
     @Column({ name: "u_id" })
-    uId: string
+    uId: string // firebase user id
 
     @CreateDateColumn()
     createdAt: Date;
