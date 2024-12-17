@@ -24,4 +24,5 @@ export class AppController {
   public() {
     return 'hi to society';
   }
+  
 }
