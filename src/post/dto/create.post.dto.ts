@@ -6,7 +6,7 @@ import {
     MaxLength,
     MinLength
 } from 'class-validator';
-import { ApiProperty, PartialType } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 
 export class CreatePostDto {
     @ApiProperty({
@@ -31,14 +31,13 @@ export class CreatePostDto {
     @MinLength(10, { message: 'Content must be at least 10 characters long' })
     content: string;
 
-    @ApiProperty({
-        description: 'URL of the blog post image',
-        example: 'https://example.com/image.jpg',
-        required: false
+    @ApiPropertyOptional({
+        type: 'string',
+        format: 'binary',
+        description: 'Post image'
     })
     @IsOptional()
-    @IsUrl({}, { message: 'Invalid image URL' })
-    imageUrl?: string;
+    image?: Express.Multer.File;
 }
 
 
@@ -52,15 +51,29 @@ export class PostResponseDto {
     @ApiProperty({ description: 'Content of the blog post' })
     content: string;
 
-    @ApiProperty({ description: 'URL of the blog post image', required: false })
-    imageUrl?: string;
+    @ApiPropertyOptional({
+        type: 'string',
+        format: 'binary',
+        description: 'Post image'
+    })
+    @IsOptional()
+    image?: Express.Multer.File;
 
     @ApiProperty({ description: 'Date of post creation' })
     createdAt: Date;
 
     @ApiProperty({ description: 'Date of last post update' })
     updatedAt: Date;
+}
 
-    @ApiProperty({ description: 'ID of the post author' })
-    authorId: string;
+export class PaginatedResponseDto<T> {
+    @ApiProperty({ description: 'The total number of items', example: 18 })
+    total: number;
+
+    @ApiProperty({
+        description: 'The data array containing the paginated results',
+        isArray: true,
+        type: () => PostResponseDto,
+    })
+    data: T[];
 }
